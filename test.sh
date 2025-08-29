@@ -7,8 +7,11 @@ set -euo pipefail
 # === Edit these to your setup ===
 TASKS="mbpp,humaneval-unstripped"
 MAXLEN=512
-GPUS=(4 5)
-STEPS=(400 800)  # or STEPS=({200..2400..200})
+
+IS_ROOT="${IS_ROOT:-0}"
+
+GPUS=(0 1 2 3 4 5 6 7)
+STEPS=(200 400 600 800 1000 1200 1600 2000)  # or STEPS=({200..2400..200})
 
 MODEL_ROOT="${MODEL_ROOT:-}"  # allow env override: MODEL_ROOT=... ./run.sh
 
@@ -64,15 +67,32 @@ while [[ $offset -lt $total ]]; do
   for (( j=0; j<num_gpus && offset+j<total; j++ )); do
     step=${STEPS[$((offset+j))]}
     gpu=${GPUS[$j]}
-    model="${MODEL_ROOT}/global_step_${step}"
+    base_step_path="${MODEL_ROOT}/global_step_${step}"
+
+    # Real model dir we need to load
+    model_real="$base_step_path"
+    if [[ "$IS_ROOT" != "1" ]]; then
+      model_real="${model_real}/actor/huggingface"
+    fi
+
+    # Create a per-step alias whose basename is global_step_${step}
+    # so the harness slug becomes "global_step_${step}" instead of "huggingface".
+    alias_root="${OUT_DIR}/_model_aliases"
+    mkdir -p "$alias_root"
+    model_alias="${alias_root}/global_step_${step}"
+    ln -sfn "$(realpath "$model_real")" "$model_alias"
+
+    # Use the alias for evaluation so filenames include the step
+    model_for_cli="$model_alias"
+
     out_base="${OUT_DIR}/step_${step}"
     mkdir -p "$out_base"
 
     (
       export CUDA_VISIBLE_DEVICES="$gpu"
-      log "[GPU ${gpu}] START step ${step}  tasks=${TASKS}  model=${model}"
+      log "[GPU ${gpu}] START step ${step}  tasks=${TASKS}  model=${model_for_cli} -> $(realpath "$model_real")"
       python main.py \
-        --model "$model" \
+        --model "$model_for_cli" \
         --max_length_generation "$MAXLEN" \
         --tasks "$TASKS" \
         --temperature 0.6 \
@@ -92,6 +112,7 @@ while [[ $offset -lt $total ]]; do
   wait
   offset=$((offset+num_gpus))
 done
+
 
 
 # Echo where to find artifacts (helps distinguish runs)
@@ -204,6 +225,8 @@ SKIP_BCB="${SKIP_BCB:-0}"   # set SKIP_BCB=1 to skip BigCodeBench and show only 
 if [[ "$SKIP_BCB" != "1" ]]; then
   pip install -q --upgrade bigcodebench
   pip install --upgrade protobuf
+  pip install numpy==1.26.4
+  pip install tensorflow==2.20.0
 
   # BCB Hard (Complete split)
   offset=0
