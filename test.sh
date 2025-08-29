@@ -14,7 +14,7 @@ GPUS=(0 1 2 3 4 5 6 7)
 STEPS=(200 400 600 800 1000 1200 1600 2000)  # or STEPS=({200..2400..200})
 
 #MODEL_ROOT="${MODEL_ROOT:-}"  # allow env override: MODEL_ROOT=... ./run.sh
-MODEL_ROOT="${MODEL_ROOT%\\}"
+#MODEL_ROOT="${MODEL_ROOT%\\}"
 
 # Accept: ./run.sh model_root=...   or   ./run.sh --model-root=...   or   ./run.sh --model-root ... 
 while (($#)); do
@@ -31,6 +31,8 @@ while (($#)); do
       shift ;;
   esac
 done
+
+MODEL_ROOT="${MODEL_ROOT%/}"
 
 # Require it
 if [[ -z "${MODEL_ROOT}" ]]; then
