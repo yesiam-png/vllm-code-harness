@@ -167,11 +167,11 @@ for r in rows:
     for i,c in enumerate(r):
         widths[i] = max(widths[i], len(c))
 
-def pr(r): print(" | ".join(str(c).ljust(w) for c,w in zip(r,widths)))
-print("\n=== File presence (this run only) ===")
-pr(headers)
-print("-+-".join("-"*w for w in widths))
-for r in rows: pr(r)
+#def pr(r): print(" | ".join(str(c).ljust(w) for c,w in zip(r,widths)))
+#print("\n=== File presence (this run only) ===")
+#pr(headers)
+#print("-+-".join("-"*w for w in widths))
+#for r in rows: pr(r)
 PY
 
 # --- Aggregated summary table for THIS run ---
@@ -221,7 +221,7 @@ for r in rows: pr(r)
 PY
 
 
-SKIP_BCB="${SKIP_BCB:-0}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
+SKIP_BCB="${SKIP_BCB:-1}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
 # =========================
 # 2) BigCodeBench runs (optional)
 # =========================
