@@ -8,15 +8,32 @@ import fnmatch
 
 
 def pattern_match(patterns, source_list):
-    """Returns a list containing all values of the source_list that
-    match at least one of the patterns"""
-    task_names = set()
-    for pattern in patterns:
-        for matching in fnmatch.filter(source_list, pattern):
-            task_names.add(matching)
-    if len(task_names) > 1:
-        raise ValueError(f"This repo only supports one task at a time but received {len(task_names)} tasks")
-    return list(task_names)[0]
+    """
+    Return a list of unique tasks from `source_list` that match any glob in `patterns`.
+
+    - Accepts a list OR a comma-separated string for `patterns`
+    - Preserves `source_list` order
+    - De-duplicates
+    - Raises if no task matches
+    """
+    if isinstance(patterns, str):
+        patterns = [p.strip() for p in patterns.split(",") if p.strip()]
+
+    matched = []
+    seen = set()
+    for item in source_list:
+        for pat in patterns:
+            if fnmatch.fnmatch(item, pat) and item not in seen:
+                matched.append(item)
+                seen.add(item)
+                break
+
+    if not matched:
+        raise ValueError(
+            f"No tasks matched patterns {patterns}. "
+            f"Available tasks: {', '.join(source_list)}"
+        )
+    return matched
 
 
 @dataclass
