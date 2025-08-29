@@ -238,6 +238,9 @@ if [[ "$SKIP_BCB" != "1" ]]; then
       step=${STEPS[$((offset+j))]}
       gpu=${GPUS[$j]}
       model="${MODEL_ROOT}/global_step_${step}"
+      if [[ "$IS_ROOT" != "1" ]]; then
+        model="${model}/actor/huggingface"
+      fi
       (
         export CUDA_VISIBLE_DEVICES="$gpu"
         log "[GPU ${gpu}] BCB HARD START step ${step} model=${model}"
