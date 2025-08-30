@@ -8,7 +8,7 @@ set -euo pipefail
 TASKS="mbpp,humaneval-unstripped"
 MAXLEN=512
 
-IS_ROOT="${IS_ROOT:-1}"
+IS_ROOT="${IS_ROOT:-0}"
 
 GPUS=(0 1 2 3 4 5 6 7)
 STEPS=(200 400 600 800 1000 1200 1600 2000)  # or STEPS=({200..2400..200})
