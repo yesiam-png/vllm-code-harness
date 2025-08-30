@@ -7,7 +7,7 @@ set -euo pipefail
 # === Edit these to your setup ===
 TASKS="mbpp,humaneval-unstripped"
 MAXLEN=512
-
+pip install evaluate
 IS_ROOT="${IS_ROOT:-0}"
 
 GPUS=(0 1 2 3 4 5 6 7)
