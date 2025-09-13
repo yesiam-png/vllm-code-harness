@@ -5,13 +5,14 @@ set -euo pipefail
 #rm -rf bcb_results
 #rm -rf results
 # === Edit these to your setup ===
-TASKS="mbpp,humaneval-unstripped"
+TASKS="mbpp,humaneval-unstripped,mbppplus,humanevalplus-unstripped"
 MAXLEN=512
 pip install evaluate
-IS_ROOT="${IS_ROOT:-0}"
+IS_ROOT="${IS_ROOT:-1}"
 
 GPUS=(0 1 2 3 4 5 6 7)
-STEPS=(200 400 600 800 1000 1200 1600 2000)  # or STEPS=({200..2400..200})
+#STEPS=(1200 1400 1600)  # or STEPS=({200..2400..200})
+STEPS=($(seq 100 100 3000))
 
 #MODEL_ROOT="${MODEL_ROOT:-}"  # allow env override: MODEL_ROOT=... ./run.sh
 #MODEL_ROOT="${MODEL_ROOT%\\}"
@@ -139,12 +140,12 @@ steps = sorted({
     if p.split("_")[-1].isdigit()
 })
 
-# Presence map: pres[step][task] = {"p1": bool, "p10": bool}
-pres = defaultdict(lambda: defaultdict(lambda: {"p1": False, "p10": False}))
+# Presence map: pres[step][task] = {"p1": bool, "p5": bool, "p10": bool}
+pres = defaultdict(lambda: defaultdict(lambda: {"p1": False, "p5": False, "p10": False}))
 for step in steps:
     base = os.path.join(OUT_DIR, f"step_{step}")
     for f in glob.glob(os.path.join(base, "metrics.*.*.p*.json")):
-        m = re.match(r".*metrics\.(.+?)\.(.+?)\.(p1|p10)\.json$", f)
+        m = re.match(r".*metrics\.(.+?)\.(.+?)\.(p1|p5|p10)\.json$", f)
         if not m: 
             continue
         _, task, run = m.groups()
@@ -152,14 +153,14 @@ for step in steps:
 
 headers = ["step"]
 for t in task_list:
-    headers += [f"{t} p@1", f"{t} p@10"]
+    headers += [f"{t} p@1", f"{t} p@5", f"{t} p@10"]
 
 rows = []
 for step in steps:
     row = [str(step)]
     for t in task_list:
         state = pres[step][t]
-        row += [("OK" if state["p1"] else "--"), ("OK" if state["p10"] else "--")]
+        row += [("OK" if state["p1"] else "--"), ("OK" if state["p5"] else "--"), ("OK" if state["p10"] else "--")]
     rows.append(row)
 
 widths = [len(h) for h in headers]
@@ -182,13 +183,13 @@ from collections import defaultdict
 OUT_DIR = os.environ["OUT_DIR_PY"]
 
 files = glob.glob(os.path.join(OUT_DIR, "step_*", "metrics.*.*.p*.json"))
-table = defaultdict(lambda: defaultdict(lambda: {"p1": None, "p10": None}))
+table = defaultdict(lambda: defaultdict(lambda: {"p1": None, "p5": None, "p10": None}))
 
 def pct(x): return "-" if x is None else f"{100*float(x):.1f}%"
 
 for f in files:
-    base = os.path.basename(f)  # metrics.<model_slug>.<task>.<p1|p10>.json
-    m = re.match(r"metrics\.(.+?)\.(.+?)\.(p1|p10)\.json$", base)
+    base = os.path.basename(f)  # metrics.<model_slug>.<task>.<p1|p5|p10>.json
+    m = re.match(r"metrics\.(.+?)\.(.+?)\.(p1|p5|p10)\.json$", base)
     if not m: 
         continue
     model_slug, task, run = m.groups()
@@ -197,18 +198,20 @@ for f in files:
     out = data.get(task, {}).get(run, {})
     if run == "p1" and "pass@1" in out:
         table[model_slug][task]["p1"] = out["pass@1"]
+    if (run == "p5" or run == "p10") and "pass@5" in out:
+        table[model_slug][task]["p5"] = out["pass@5"]
     if run == "p10" and "pass@10" in out:
         table[model_slug][task]["p10"] = out["pass@10"]
 
 tasks = sorted({t for per_model in table.values() for t in per_model.keys()})
-headers = ["model"] + [h for t in tasks for h in (f"{t} p@1", f"{t} p@10")]
+headers = ["model"] + [h for t in tasks for h in (f"{t} p@1", f"{t} p@5", f"{t} p@10")]
 widths = [len(h) for h in headers]
 
 rows = []
 for model, per_task in sorted(table.items()):
     row = [model]
     for t in tasks:
-        row += [pct(per_task[t]["p1"]), pct(per_task[t]["p10"])]
+        row += [pct(per_task[t]["p1"]), pct(per_task[t]["p5"]), pct(per_task[t]["p10"])]
     rows.append(row)
     for i,c in enumerate(row):
         widths[i] = max(widths[i], len(str(c)))
@@ -221,7 +224,7 @@ for r in rows: pr(r)
 PY
 
 
-SKIP_BCB="${SKIP_BCB:-1}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
+SKIP_BCB="${SKIP_BCB:-0}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
 # =========================
 # 2) BigCodeBench runs (optional)
 # =========================
@@ -311,7 +314,7 @@ MODEL_ROOT = os.environ.get("MODEL_ROOT_PY","")
 
 # Build rows from harness metrics (same as previous table)
 files = glob.glob(os.path.join(OUT_DIR, "step_*", "metrics.*.*.p*.json"))
-rows_by_model = defaultdict(lambda: defaultdict(lambda: {"p1": None, "p10": None}))
+rows_by_model = defaultdict(lambda: defaultdict(lambda: {"p1": None, "p5": None, "p10": None}))
 step_to_model = {}  # map step -> model_slug in our rows
 
 def pct(x): return "-" if x is None else f"{100*float(x):.1f}%"
@@ -321,8 +324,8 @@ for f in files:
     mstep = re.match(r"step_(\d+)$", step_dir)
     step = int(mstep.group(1)) if mstep else None
 
-    base = os.path.basename(f)  # metrics.<model_slug>.<task>.<p1|p10>.json
-    m = re.match(r"metrics\.(.+?)\.(.+?)\.(p1|p10)\.json$", base)
+    base = os.path.basename(f)  # metrics.<model_slug>.<task>.<p1|p5|p10>.json
+    m = re.match(r"metrics\.(.+?)\.(.+?)\.(p1|p5|p10)\.json$", base)
     if not m: 
         continue
     model_slug, task, run = m.groups()
@@ -333,6 +336,8 @@ for f in files:
     out = data.get(task, {}).get(run, {})
     if run == "p1" and "pass@1" in out:
         rows_by_model[model_slug][task]["p1"] = out["pass@1"]
+    if (run == "p5" or run == "p10") and "pass@5" in out:
+        rows_by_model[model_slug][task]["p5"] = out["pass@5"]
     if run == "p10" and "pass@10" in out:
         rows_by_model[model_slug][task]["p10"] = out["pass@10"]
 
@@ -367,7 +372,7 @@ for f in glob.glob(os.path.join(BCB_DIR, "*pass_at_k.json")):
 
 # Build extended header order
 tasks = sorted({t for per_model in rows_by_model.values() for t in per_model.keys()})
-headers = ["model"] + [h for t in tasks for h in (f"{t} p@1", f"{t} p@10")] + ["BigCodeBench Hard p@1", "BigCodeBench Full p@1"]
+headers = ["model"] + [h for t in tasks for h in (f"{t} p@1", f"{t} p@5", f"{t} p@10")] + ["BigCodeBench Hard p@1", "BigCodeBench Full p@1"]
 widths = [len(h) for h in headers]
 
 # Compose rows with BCB columns
@@ -375,7 +380,7 @@ rows = []
 for step, model in sorted(step_to_model.items()):
     row = [model]
     for t in tasks:
-        row += [pct(rows_by_model[model][t]["p1"]), pct(rows_by_model[model][t]["p10"])]
+        row += [pct(rows_by_model[model][t]["p1"]), pct(rows_by_model[model][t]["p5"]), pct(rows_by_model[model][t]["p10"])]
     row += [pct(bcb[step]["hard"]), pct(bcb[step]["full"])]
     rows.append(row)
     for i,c in enumerate(row):
