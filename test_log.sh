@@ -224,7 +224,7 @@ for r in rows: pr(r)
 PY
 
 
-SKIP_BCB="${SKIP_BCB:-1}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
+SKIP_BCB="${SKIP_BCB:-0}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
 # =========================
 # 2) BigCodeBench runs (optional)
 # =========================
@@ -255,7 +255,6 @@ if [[ "$SKIP_BCB" != "1" ]]; then
           --parallel 64 \
           --resume false \
           --direct_completion \
-          --gradio_endpoint https://zhangshenao-bigcodebench-evaluator.hf.space \
           --pass_k 1 --n_samples 1 --temperature 0.0 \
           > "${LOG_DIR}/bcb_hard_step_${step}.log" 2>&1 || true
         log "[GPU ${gpu}] BCB HARD DONE  step ${step}"
@@ -272,6 +271,9 @@ if [[ "$SKIP_BCB" != "1" ]]; then
       step=${STEPS[$((offset+j))]}
       gpu=${GPUS[$j]}
       model="${MODEL_ROOT}/global_step_${step}"
+      if [[ "$IS_ROOT" != "1" ]]; then
+        model="${model}/actor/huggingface"
+      fi
       (
         export CUDA_VISIBLE_DEVICES="$gpu"
         log "[GPU ${gpu}] BCB FULL START step ${step} model=${model}"
