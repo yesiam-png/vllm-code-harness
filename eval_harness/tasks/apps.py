@@ -12,7 +12,7 @@ import json
 from evaluate import load
 
 from eval_harness.base import Task
-
+import re
 _CITATION = """
 @article{hendrycksapps2021,
   title={Measuring Coding Challenge Competence With APPS},
