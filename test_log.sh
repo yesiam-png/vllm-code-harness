@@ -5,7 +5,7 @@ set -euo pipefail
 #rm -rf bcb_results
 #rm -rf results
 # === Edit these to your setup ===
-TASKS="mbpp,humaneval-unstripped,mbppplus,humanevalplus-unstripped"
+TASKS="mbpp,humaneval-unstripped,mbppplus,humanevalplus-unstripped,apps-introductory,apps-interview,apps-competition"
 MAXLEN=512
 pip install evaluate
 IS_ROOT="${IS_ROOT:-1}"
@@ -95,15 +95,15 @@ while [[ $offset -lt $total ]]; do
     (
       export CUDA_VISIBLE_DEVICES="$gpu"
       log "[GPU ${gpu}] START step ${step}  tasks=${TASKS}  model=${model_for_cli} -> $(realpath "$model_real")"
-    #  python main.py \
-    #    --model "$model_for_cli" \
-    #    --max_length_generation "$MAXLEN" \
-    #    --tasks "$TASKS" \
-    #    --temperature 0.6 \
-    #    --n_samples 10 \
-    #    --allow_code_execution \
-    #    --metric_output_path "${out_base}/metrics.json" \
-    #    > "${LOG_DIR}/step_${step}.log" 2>&1
+      python main.py \
+        --model "$model_for_cli" \
+        --max_length_generation "$MAXLEN" \
+        --tasks "apps-introductory,apps-interview,apps-competition" \
+        --temperature 0.6 \
+        --n_samples 10 \
+        --allow_code_execution \
+        --metric_output_path "${out_base}/metrics.json" \
+        > "${LOG_DIR}/step_${step}.log" 2>&1
       rc=$?
       if [[ $rc -eq 0 ]]; then
         log "[GPU ${gpu}] DONE  step ${step}"
@@ -224,7 +224,7 @@ for r in rows: pr(r)
 PY
 
 
-SKIP_BCB="${SKIP_BCB:-0}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
+SKIP_BCB="${SKIP_BCB:-1}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
 # =========================
 # 2) BigCodeBench runs (optional)
 # =========================

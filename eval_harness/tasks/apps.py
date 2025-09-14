@@ -24,7 +24,75 @@ _CITATION = """
 
 
 LEVELS = ["introductory", "interview", "competition"]
+from math import gcd
+from collections import Counter
 
+def normalize_model_body(generation: str):#, tabsize: int):
+    """
+    Detect the leading indentation style of `generation` and remove ONE indent level.
+    Returns (body, info) where `body` is runnable at top level and `info` describes detection.
+
+    - Handles tabs, spaces (2/3/4/8), and mixed whitespace.
+    - Doesn't require valid Python—works on raw text.
+    - Preserves inner indentation (relative structure).
+    """
+    def detect_indentation(text: str):
+        space_widths, tab_lines, mixed_ws_lines, total_indented = [], 0, 0, 0
+        for ln in text.splitlines():
+            if not ln.strip():
+                continue
+            m = re.match(r'[ \t]+', ln)
+            if not m:
+                continue
+            total_indented += 1
+            ws = m.group(0)
+            kinds = set(ws)
+            if kinds == {' '}:
+                space_widths.append(len(ws))
+            elif kinds == {'\t'}:
+                tab_lines += 1
+            else:
+                mixed_ws_lines += 1
+
+        if total_indented == 0:
+            return {"style": "none", "unit": None, "details": "No indented lines found."}
+
+        if tab_lines > 0 and not space_widths and mixed_ws_lines == 0:
+            return {"style": "tabs", "unit": "\\t", "details": f"{tab_lines} tab-indented lines"}
+
+        if space_widths and tab_lines == 0 and mixed_ws_lines == 0:
+            uniq = sorted(set(space_widths))
+            unit = uniq[0]
+            for n in uniq[1:]:
+                unit = gcd(unit, n)
+            if unit not in (2, 3, 4, 8):
+                unit = min((2, 4, 8), key=lambda k: abs(k - unit))
+            return {"style": "spaces", "unit": unit, "details": f"Observed space indents: {Counter(space_widths)}"}
+
+        return {
+            "style": "mixed",
+            "unit": (min(space_widths) if space_widths else None),
+            "details": {
+                "space_indents_seen": Counter(space_widths),
+                "tab_only_lines": tab_lines,
+                "lines_with_both_tabs_and_spaces": mixed_ws_lines
+            }
+        }
+
+    info = detect_indentation(generation)
+    body = generation.lstrip("\n")  # drop any leading blank line
+
+    if info["style"] == "tabs":
+        # Remove exactly ONE leading tab from indented lines
+        body = re.sub(r'^\t', '', body, flags=re.MULTILINE)
+
+    elif info["style"] == "spaces":
+        unit = int(info["unit"])
+        # Remove exactly ONE indent unit of spaces; be forgiving if a line has < unit
+        pattern = re.compile(r'^(?: {' + str(unit) + r'}|[ ]{1,' + str(unit) + r'})', re.MULTILINE)
+        body = pattern.sub('', body)
+
+    return body, info
 
 def create_all_tasks():
     """Creates a dictionary of tasks from a list of levels
@@ -50,10 +118,10 @@ class GeneralAPPS(Task):
     DATASET_PATH = "codeparrot/apps"
     DATASET_NAME = None
 
-    def __init__(self, level, k_list=[1, 10, 25, 100]):
+    def __init__(self, level, k_list=[1, 5, 10, 25, 100]):
         self.DATASET_NAME = level
         super().__init__(
-            stop_words=["\nQUESTION", "\n---", "\nANSWER"],
+            stop_words=["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/", "\n```", "\ndef"],
             requires_execution=True,
         )
         self.k_list = k_list
@@ -68,6 +136,8 @@ class GeneralAPPS(Task):
         We also specify the type of the prompt, i.e. whether it is call-based or standard input-based.
         """
         starter_code = None if len(doc["starter_code"]) == 0 else doc["starter_code"]
+        if starter_code is not None:
+            print("starter_code", starter_code)
         try:
             input_outpout = json.loads(doc["input_output"])
             fn_name = (
@@ -75,19 +145,20 @@ class GeneralAPPS(Task):
             )
         except ValueError:
             fn_name = None
-        prompt = "\nQUESTION:\n"
-        prompt += doc["question"]
+        print("fn_name", fn_name)
+      #  prompt = "\nQUESTION:\n"
+        prompt = doc["question"]
         if starter_code:
             prompt += starter_code
         if not fn_name:
-            call_format = "\nUse Standard Input format"
-            prompt += call_format
-        else:
-            call_format = "\nUse Call-Based format"
-            prompt += call_format
-        prompt += "\nANSWER:\n"
-        print("prompt", prompt)
+            #call_format = "\nUse Standard Input format"
+            prompt += "def solve():\n" #call_format
+        #else:
+        #    call_format = "\nUse Call-Based format"
+        #    prompt += "def solve():" #call_format
+        #prompt += "\nANSWER:\n"
         return prompt
+    
 
     def get_reference(self, doc):
         """Builds the reference solution for the doc (sample from the test dataset)."""
@@ -106,6 +177,10 @@ class GeneralAPPS(Task):
         except IndexError:
             # happens when prompts were very long and got truncated
             pass
+        generation = self._stop_at_stop_token(generation, self.stop_words)
+        print("preegeneration", generation)
+        generation, _ = normalize_model_body(generation)
+        print("aftergeneration", generation)
         return generation
 
     def process_results(self, generations, references):
