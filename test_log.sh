@@ -234,6 +234,36 @@ if [[ "$SKIP_BCB" != "1" ]]; then
   pip install numpy==1.26.4
   pip install tensorflow==2.20.0
 
+  # BCB Full (Complete split)
+  offset=0
+  while [[ $offset -lt $total ]]; do
+    for (( j=0; j<num_gpus && offset+j<total; j++ )); do
+      step=${STEPS[$((offset+j))]}
+      gpu=${GPUS[$j]}
+      model="${MODEL_ROOT}/global_step_${step}"
+      if [[ "$IS_ROOT" != "1" ]]; then
+        model="${model}/actor/huggingface"
+      fi
+      (
+        export CUDA_VISIBLE_DEVICES="$gpu"
+        log "[GPU ${gpu}] BCB FULL START step ${step} model=${model}"
+        bigcodebench.evaluate \
+          --model "$model" \
+          --split complete \
+          --subset full \
+          --backend vllm \
+          --parallel 64 \
+          --resume false \
+          --direct_completion \
+          --pass_k 1 --n_samples 1 --temperature 0.0 \
+          > "${LOG_DIR}/bcb_full_step_${step}.log" 2>&1 || true
+        log "[GPU ${gpu}] BCB FULL DONE  step ${step}"
+      ) &
+    done
+    wait
+    offset=$((offset+num_gpus))
+  done
+
   # BCB Hard (Complete split)
   offset=0
   while [[ $offset -lt $total ]]; do
@@ -258,37 +288,6 @@ if [[ "$SKIP_BCB" != "1" ]]; then
           --pass_k 1 --n_samples 1 --temperature 0.0 \
           > "${LOG_DIR}/bcb_hard_step_${step}.log" 2>&1 || true
         log "[GPU ${gpu}] BCB HARD DONE  step ${step}"
-      ) &
-    done
-    wait
-    offset=$((offset+num_gpus))
-  done
-
-  # BCB Full (Complete split)
-  offset=0
-  while [[ $offset -lt $total ]]; do
-    for (( j=0; j<num_gpus && offset+j<total; j++ )); do
-      step=${STEPS[$((offset+j))]}
-      gpu=${GPUS[$j]}
-      model="${MODEL_ROOT}/global_step_${step}"
-      if [[ "$IS_ROOT" != "1" ]]; then
-        model="${model}/actor/huggingface"
-      fi
-      (
-        export CUDA_VISIBLE_DEVICES="$gpu"
-        log "[GPU ${gpu}] BCB FULL START step ${step} model=${model}"
-        bigcodebench.evaluate \
-          --model "$model" \
-          --split complete \
-          --subset full \
-          --backend vllm \
-          --parallel 64 \
-          --resume false \
-          --direct_completion \
-          --gradio_endpoint https://zhangshenao-bigcodebench-evaluator.hf.space \
-          --pass_k 1 --n_samples 1 --temperature 0.0 \
-          > "${LOG_DIR}/bcb_full_step_${step}.log" 2>&1 || true
-        log "[GPU ${gpu}] BCB FULL DONE  step ${step}"
       ) &
     done
     wait
