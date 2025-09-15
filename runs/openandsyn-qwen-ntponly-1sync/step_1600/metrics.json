@@ -1,0 +1,82 @@
+{
+  "results": {
+    "global_step_1600": {
+      "humaneval-unstripped": {
+        "p1": {
+          "pass@1": 0.38414634146341464
+        },
+        "p10": {
+          "pass@1": 0.33719512195121953,
+          "pass@5": 0.5670247773906311,
+          "pass@10": 0.6463414634146342
+        }
+      },
+      "humanevalplus-unstripped": {
+        "p1": {
+          "pass@1": 0.3170731707317073
+        },
+        "p10": {
+          "pass@1": 0.2920731707317073,
+          "pass@5": 0.5120015485869145,
+          "pass@10": 0.5792682926829268
+        }
+      },
+      "mbpp": {
+        "p1": {
+          "pass@1": 0.424
+        },
+        "p10": {
+          "pass@1": 0.37939999999999996,
+          "pass@5": 0.5942063492063492,
+          "pass@10": 0.664
+        }
+      },
+      "mbppplus": {
+        "p1": {
+          "pass@1": 0.48148148148148145
+        },
+        "p10": {
+          "pass@1": 0.44338624338624344,
+          "pass@5": 0.6567670277987739,
+          "pass@10": 0.7116402116402116
+        }
+      }
+    }
+  },
+  "config": {
+    "temperature": 0.6,
+    "top_k": -1,
+    "top_p": 0.95,
+    "n_samples": 10,
+    "repetition_penalty": 1.0,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0,
+    "max_length_generation": 512,
+    "model": "runs/openandsyn-qwen-ntponly-1sync/_model_aliases/global_step_1600",
+    "use_auth_token": true,
+    "trust_remote_code": true,
+    "precision": "fp32",
+    "left_padding": false,
+    "gpu_memory_utilization": 0.95,
+    "swap_space": 64,
+    "continuous_batching_size": null,
+    "sequence_length_limit": null,
+    "tasks": "mbpp,humaneval-unstripped,mbppplus,humanevalplus-unstripped",
+    "instruction_tokens": null,
+    "metric_output_path": "runs/openandsyn-qwen-ntponly-1sync/step_1600/metrics.json",
+    "save_generations": true,
+    "save_generations_path": "/tmp/generations.json",
+    "save_references": true,
+    "save_references_path": "/tmp/references.json",
+    "prompt": "prompt",
+    "prefix": "",
+    "seed": 0,
+    "limit": null,
+    "limit_start": 0,
+    "postprocess": true,
+    "allow_code_execution": true,
+    "generation_only": false,
+    "load_generations_path": null,
+    "load_data_path": null
+  }
+}

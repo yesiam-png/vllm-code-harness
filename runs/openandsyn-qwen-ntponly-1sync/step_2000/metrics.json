@@ -1,0 +1,82 @@
+{
+  "results": {
+    "global_step_2000": {
+      "humaneval-unstripped": {
+        "p1": {
+          "pass@1": 0.4146341463414634
+        },
+        "p10": {
+          "pass@1": 0.34817073170731705,
+          "pass@5": 0.5730497483546264,
+          "pass@10": 0.6463414634146342
+        }
+      },
+      "humanevalplus-unstripped": {
+        "p1": {
+          "pass@1": 0.35365853658536583
+        },
+        "p10": {
+          "pass@1": 0.3048780487804878,
+          "pass@5": 0.5334397986837012,
+          "pass@10": 0.6036585365853658
+        }
+      },
+      "mbpp": {
+        "p1": {
+          "pass@1": 0.434
+        },
+        "p10": {
+          "pass@1": 0.3786,
+          "pass@5": 0.5922857142857142,
+          "pass@10": 0.652
+        }
+      },
+      "mbppplus": {
+        "p1": {
+          "pass@1": 0.4656084656084656
+        },
+        "p10": {
+          "pass@1": 0.42857142857142855,
+          "pass@5": 0.6480536659108088,
+          "pass@10": 0.7063492063492064
+        }
+      }
+    }
+  },
+  "config": {
+    "temperature": 0.6,
+    "top_k": -1,
+    "top_p": 0.95,
+    "n_samples": 10,
+    "repetition_penalty": 1.0,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0,
+    "max_length_generation": 512,
+    "model": "runs/openandsyn-qwen-ntponly-1sync/_model_aliases/global_step_2000",
+    "use_auth_token": true,
+    "trust_remote_code": true,
+    "precision": "fp32",
+    "left_padding": false,
+    "gpu_memory_utilization": 0.95,
+    "swap_space": 64,
+    "continuous_batching_size": null,
+    "sequence_length_limit": null,
+    "tasks": "mbpp,humaneval-unstripped,mbppplus,humanevalplus-unstripped",
+    "instruction_tokens": null,
+    "metric_output_path": "runs/openandsyn-qwen-ntponly-1sync/step_2000/metrics.json",
+    "save_generations": true,
+    "save_generations_path": "/tmp/generations.json",
+    "save_references": true,
+    "save_references_path": "/tmp/references.json",
+    "prompt": "prompt",
+    "prefix": "",
+    "seed": 0,
+    "limit": null,
+    "limit_start": 0,
+    "postprocess": true,
+    "allow_code_execution": true,
+    "generation_only": false,
+    "load_generations_path": null,
+    "load_data_path": null
+  }
+}
