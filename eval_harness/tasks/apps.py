@@ -145,14 +145,14 @@ class GeneralAPPS(Task):
             )
         except ValueError:
             fn_name = None
-        print("fn_name", fn_name)
+      #  print("fn_name", fn_name)
       #  prompt = "\nQUESTION:\n"
         prompt = doc["question"]
         if starter_code:
             prompt += starter_code
         if not fn_name:
             #call_format = "\nUse Standard Input format"
-            prompt += "def solve():\n" #call_format
+            prompt += "\n\ndef solve():\n" #call_format
         #else:
         #    call_format = "\nUse Call-Based format"
         #    prompt += "def solve():" #call_format
@@ -172,11 +172,13 @@ class GeneralAPPS(Task):
             index of doc in the dataset to which the generation belongs
             (not used for APPS)
         """
-        try:
-            generation = generation.split("\nANSWER:", 1)[1]
-        except IndexError:
-            # happens when prompts were very long and got truncated
-            pass
+     #   try:
+     #       generation = generation.split("\nANSWER:", 1)[1]
+     #   except IndexError:
+     #       # happens when prompts were very long and got truncated
+     #       pass
+        prompt = self.get_prompt(self.dataset["test"][idx])
+        generation = generation[len(prompt) :]
         generation = self._stop_at_stop_token(generation, self.stop_words)
         print("preegeneration", generation)
         generation, _ = normalize_model_body(generation)

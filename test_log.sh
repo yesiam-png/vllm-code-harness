@@ -6,7 +6,7 @@ set -euo pipefail
 #rm -rf results
 # === Edit these to your setup ===
 TASKS="mbpp,humaneval-unstripped,mbppplus,humanevalplus-unstripped,apps-introductory,apps-interview,apps-competition"
-MAXLEN=512
+MAXLEN=1024
 pip install evaluate
 IS_ROOT="${IS_ROOT:-1}"
 
