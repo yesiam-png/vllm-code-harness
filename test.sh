@@ -224,7 +224,7 @@ for r in rows: pr(r)
 PY
 
 
-SKIP_BCB="${SKIP_BCB:-0}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
+SKIP_BCB="${SKIP_BCB:-1}"   # set SKIP_BCB=1 to skip BigCodeBench and show only MBPP/HumanEval tables
 # =========================
 # 2) BigCodeBench runs (optional)
 # =========================
